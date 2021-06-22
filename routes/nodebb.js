@@ -30,6 +30,22 @@ const responseObj = {
   message: 'You are not authorized to perform this action.'
 };
 
+// dummy api forload testing
+app.get(`${BASE_REPORT_URL}/dummy/withoutLogic`, (req,res) => {
+  res.send({"message" : "Success response"});
+});
+
+app.get(`${BASE_REPORT_URL}/dummy/category/:cid`, testProxyObj());
+
+function testProxyObj () {
+  return proxy(nodebbServiceUrl, {
+    proxyReqPathResolver: function (req) {
+      return nodebbServiceUrl + '/category/2'
+    }
+  })
+}
+
+
 app.post(`${BASE_REPORT_URL}/forum/v2/read`, proxyObject());
 app.post(`${BASE_REPORT_URL}/forum/v2/create`, proxyObject());
 app.post(`${BASE_REPORT_URL}/forum/v2/remove`, proxyObject());
