@@ -239,8 +239,8 @@ function proxyObject() {
           // logger.info({ message: `${req.originalUrl} Not found ${data}` })
           
           const resCode = {
-            'errmsg':  errorObj.errMsg,
-            'err' : errorObj.err
+            'errmsg':  'error',
+            'err' : proxyResData.statusCode
           }
           // const resCode = proxyUtils.errorResponse(req, res, proxyRes, null);
           // logTelemetryEvent(req, res, data, proxyResData, proxyRes, resCode)     
