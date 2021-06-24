@@ -244,13 +244,15 @@ function proxyObject() {
           // }
           const resCode = proxyUtils.errorResponse(req, res, proxyRes, null);
           logTelemetryEvent(req, res, data, proxyResData, proxyRes, resCode)     
-          return resCode;
+          // return resCode;
+          return proxyUtils.errorResponse(req, res, proxyRes, null);;
         } else {
           edata['message'] = `${req.originalUrl} successfull`;
           const resCode = proxyUtils.handleSessionExpiry(proxyRes, proxyResData, req, res, null)
           logTelemetryEvent(req, res, data, proxyResData, proxyRes, resCode)
           logMessage(edata, req);
-          return proxyResData;
+          // return proxyResData;
+          return proxyUtils.handleSessionExpiry(proxyRes, proxyResData, req, res, null);
         }
       } catch (err) {
         console.log(CONSTANTS.LogPrefix+ 'error')
@@ -258,8 +260,8 @@ function proxyObject() {
         edata['message'] = `Error: ${err.message}, Url:  ${req.originalUrl}`;
         logMessage(edata, req);
         // logger.info({ message: `Error while htting the ${req.url}  ${err.message}` });
-        // return proxyUtils.handleSessionExpiry(proxyRes, proxyResData, req,res, err);
-        return err;
+        return proxyUtils.handleSessionExpiry(proxyRes, proxyResData, req,res, err);
+        // return err;
       }
     }
   })
