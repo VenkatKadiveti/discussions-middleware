@@ -223,40 +223,40 @@ function proxyObject() {
       }
     },
     userResDecorator: (proxyRes, proxyResData, req, res) => {
-      // let edata = {
-      //   "type": "log",
-      //   "level": "INFO",
-      //   "requestid": req.headers['x-request-id'] || '',
-      //   "message": ''
-      // };
+      let edata = {
+        "type": "log",
+        "level": "INFO",
+        "requestid": req.headers['x-request-id'] || '',
+        "message": ''
+      };
       try {
         // logger.info({ message: `request came from ${req.originalUrl}` })
-        // const data = proxyResData.toString('utf8');
+        const data = proxyResData.toString('utf8');
         cosole.log(CONSTANTS.LogPrefix+ 'Response');
         if (proxyRes.statusCode === 404) {
-          // edata['message'] = `Request url ${req.originalUrl} not found`;
-          // logMessage(edata, req);
+          edata['message'] = `Request url ${req.originalUrl} not found`;
+          logMessage(edata, req);
           // logger.info({ message: `${req.originalUrl} Not found ${data}` })
           
-          const resCode = {
-            'errmsg':  'error',
-            'err' : proxyResData.statusCode
-          }
-          // const resCode = proxyUtils.errorResponse(req, res, proxyRes, null);
-          // logTelemetryEvent(req, res, data, proxyResData, proxyRes, resCode)     
+          // const resCode = {
+          //   'errmsg':  'error',
+          //   'err' : proxyResData.statusCode
+          // }
+          const resCode = proxyUtils.errorResponse(req, res, proxyRes, null);
+          logTelemetryEvent(req, res, data, proxyResData, proxyRes, resCode)     
           return resCode;
         } else {
-          // edata['message'] = `${req.originalUrl} successfull`;
-          // const resCode = proxyUtils.handleSessionExpiry(proxyRes, proxyResData, req, res, null)
-          // logTelemetryEvent(req, res, data, proxyResData, proxyRes, resCode)
-          // logMessage(edata, req);
+          edata['message'] = `${req.originalUrl} successfull`;
+          const resCode = proxyUtils.handleSessionExpiry(proxyRes, proxyResData, req, res, null)
+          logTelemetryEvent(req, res, data, proxyResData, proxyRes, resCode)
+          logMessage(edata, req);
           return proxyResData;
         }
       } catch (err) {
         console.log(CONSTANTS.LogPrefix+ 'error')
-        // edata['level'] = "Error";
-        // edata['message'] = `Error: ${err.message}, Url:  ${req.originalUrl}`;
-        // logMessage(edata, req);
+        edata['level'] = "Error";
+        edata['message'] = `Error: ${err.message}, Url:  ${req.originalUrl}`;
+        logMessage(edata, req);
         // logger.info({ message: `Error while htting the ${req.url}  ${err.message}` });
         // return proxyUtils.handleSessionExpiry(proxyRes, proxyResData, req,res, err);
         return err;
