@@ -7,6 +7,7 @@ var nodebb = require('./routes/nodebb');
 var cors = require('cors');
 var app = express();
 const telemetry = new (require('./libs/sb_telemetry_util/telemetryService'))()
+const session = require('express-session')
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -17,6 +18,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// nodebb session 
+app.use(session({
+  uid: null,
+  userSlug: null,
+  userName: null,
+  usertoken: null,
+  secret: 'venkat'
+}))
 app.use(cors());
 app.all('/health', (req,res,next) => {
   res.send({statusCode: 200, message: "health api"})

@@ -150,7 +150,7 @@ app.post(`${BASE_REPORT_URL}/v2/users/:uid/tokens`, proxyObject());
 app.delete(`${BASE_REPORT_URL}/v2/users/:uid/tokens/:token`, proxyObject());
 app.get(`${BASE_REPORT_URL}/user/username/:username`, proxyObject());
 
-app.post(`${BASE_REPORT_URL}/user/v1/create`, proxyObject());
+app.post(`${BASE_REPORT_URL}/user/v1/create`, proxyObjectForcreate());
 app.get(`${BASE_REPORT_URL}/user/uid/:uid`, proxyObject());
 
 function isEditablePost() {
@@ -194,15 +194,67 @@ function proxyObject() {
       let urlParam = req.originalUrl.replace('/discussion', '');
       logger.info({"message": `request comming from ${req.originalUrl}`})
       let query = require('url').parse(req.url).query;
+      const uid = _.get(req, 'session.uid');
+      console.log('session-------------------', req.session, req.session.uid)
       if (query) {
-        return require('url').parse(nodebbServiceUrl+ urlParam + '?' + query).path
+        const x = require('url').parse(nodebbServiceUrl+ urlParam + `&&_uid=${uid}`).path;
+        console.log('x=============',x)
+        return x
       } else {
 		    const incomingUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-        const proxyUrl = require('url').parse(nodebbServiceUrl + urlParam);
+        const proxyUrl = uid ? require('url').parse(nodebbServiceUrl + urlParam + `&&_uid=${uid}`) : require('url').parse(nodebbServiceUrl + urlParam );
         logger.info({message: `Proxy req url :  ${incomingUrl}`});
         logger.info({message: `Upstream req url :  ${proxyUrl.href}`});
         return proxyUrl.path;
       }
+    },
+    userResDecorator: (proxyRes, proxyResData, req, res) => {
+      let edata = {
+        "type": "log",
+        "level": "INFO",
+        "requestid": req.headers['x-request-id'] || '',
+        "message": ''
+      };
+      try {
+        logger.info({ message: `request came from ${req.originalUrl}` })
+        const data = proxyResData.toString('utf8');
+        if (proxyRes.statusCode === 404) {
+          edata['message'] = `Request url ${req.originalUrl} not found`;
+          logMessage(edata, req);
+          logger.info({ message: `${req.originalUrl} Not found ${data}` })
+          const resCode = proxyUtils.errorResponse(req, res, proxyRes, null);
+          logTelemetryEvent(req, res, data, proxyResData, proxyRes, resCode)     
+          return resCode;
+        } else {
+          edata['message'] = `${req.originalUrl} successfull`;
+          const resCode = proxyUtils.handleSessionExpiry(proxyRes, proxyResData, req, res, null)
+          logTelemetryEvent(req, res, data, proxyResData, proxyRes, resCode)
+          logMessage(edata, req);
+          return resCode;
+        }
+      } catch (err) {
+        console.log('catch', err)
+        edata['level'] = "Error";
+        edata['message'] = `Error: ${err.message}, Url:  ${req.originalUrl}`;
+        logMessage(edata, req);
+        logger.info({ message: `Error while htting the ${req.url}  ${err.message}` });
+        return proxyUtils.handleSessionExpiry(proxyRes, proxyResData, req,res, err);
+      }
+    }
+  })
+}
+
+function proxyObjectForcreate() {
+  return proxy(nodebbServiceUrl, {
+    proxyReqOptDecorator: proxyUtils.decorateRequestHeaders(),
+    proxyReqPathResolver: function (req) {
+      let urlParam = req.originalUrl.replace('/discussion', '');
+      logger.info({"message": `request comming from ${req.originalUrl}`})
+      const incomingUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+      const proxyUrl = require('url').parse(nodebbServiceUrl + urlParam);
+      logger.info({message: `Proxy req url :  ${incomingUrl}`});
+      logger.info({message: `Upstream req url :  ${proxyUrl.href}`});
+      return proxyUrl.path;
     },
     userResDecorator: (proxyRes, proxyResData, req, res) => {
       let edata = {

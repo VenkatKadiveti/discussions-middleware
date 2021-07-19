@@ -40,11 +40,8 @@ let error_obj = {
 */
 const decorateRequestHeaders = function () {
   return function (proxyReqOpts) {
-    logger.info({message: `adding headers in the request ${proxyReqOpts.path}`});
-    if (userCreate === proxyReqOpts.path || groupCreate === proxyReqOpts.path) {
       proxyReqOpts.headers.Authorization = 'Bearer ' + Authorization;
-    }
-    return proxyReqOpts;
+      return proxyReqOpts;
   }
 }
 
@@ -83,6 +80,8 @@ const handleSessionExpiry = (proxyRes, proxyResData, req, res, error) => {
       result: {}
     };
   } else if(error || errorStatus.includes(proxyRes.statusCode)) {
+    console.log('0---------------------------------', JSON.parse(proxyResData.toString('utf8')))
+    console.log('0---------------------------------', proxyRes.statusCode)
     edata['message'] = `${req.originalUrl} failed`;
     edata.level = "ERROR";
     logger.info({message: `${req.originalUrl} failed`});
@@ -92,11 +91,24 @@ const handleSessionExpiry = (proxyRes, proxyResData, req, res, error) => {
     edata['message'] = `${req.originalUrl} successfull`;
     logger.info({message: `${req.originalUrl} successfull`});
     logMessage(edata, req);
+    if (req.route.path === userCreate) {
+      addUserdataIntoSession(req, res, proxyRes, proxyResData);
+    }
     return proxyResData;
   }
 }
 
+function addUserdataIntoSession(req, res, proxyRes, proxyResData) {
+  const data = JSON.parse(proxyResData.toString('utf8'));
+  const userdata = _.get(data, 'result');
+  req.session.userName = _.get(userdata, 'userName');
+  req.session.uid = _.get(userdata, 'userId.uid');
+  req.session.usertoken = proxyRes.headers['nodebb_auth_token'];
+  req.session.userSlug = _.get(userdata, 'userSlug');
+} 
+
 function logMessage(data, req) {
+  console.log(req.route.path, '------------', req.session);
   logObj.context.env = req.originalUrl;
   logObj.context.did = req.headers['x-device-id'];
   logObj.context.sid = req.headers['x-session-id'];
